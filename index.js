@@ -44,6 +44,7 @@ app.get("/all", async (req, res, next) => {
       ? `AND tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59'`
       : ""
 
+  // console.log(typeof hargaUSDTDari, typeof hargaUSDTSampai)
   let filterHargaUSDT =
     !empty(hargaUSDTDari) && !empty(hargaUSDTSampai)
       ? `AND hargausdt BETWEEN ${hargaUSDTDari} AND ${hargaUSDTSampai}`
@@ -75,7 +76,7 @@ app.get("/all", async (req, res, next) => {
   // console.log({page,perpage})
   let offset = (page - 1) * perpage
   let query = `SELECT * FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell} LIMIT ${perpage} OFFSET ${offset}`
-  console.log(query)
+  // console.log(query)
   let data = await db.query(query)
 
   let queryCount = `SELECT COUNT(id) as jml FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell}`
