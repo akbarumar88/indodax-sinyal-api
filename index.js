@@ -38,6 +38,8 @@ app.get("/all", async (req, res, next) => {
     lastBuySampai,
     lastSellDari,
     lastSellSampai,
+    jenis,
+    level,
   } = req.query
   let filterTgl =
     !empty(tglawal) && !empty(tglakhir)
@@ -73,19 +75,23 @@ app.get("/all", async (req, res, next) => {
     !empty(lastSellDari) && !empty(lastSellSampai)
       ? `AND lastsell BETWEEN ${lastSellDari} AND ${lastSellSampai}`
       : ""
+
+  let filterJenis = !empty(jenis) ? `AND jenis = '${jenis}'` : ""
+
+  let filterLevel = !empty(level) ? `AND level = '${level}'` : ""
   // console.log({page,perpage})
   let offset = (page - 1) * perpage
-  let query = `SELECT * FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell} LIMIT ${perpage} OFFSET ${offset}`
+  let query = `SELECT * FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell} ${filterJenis} ${filterLevel} LIMIT ${perpage} OFFSET ${offset}`
   // console.log(query)
   let data = await db.query(query)
 
-  let queryCount = `SELECT COUNT(id) as jml FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell}`
+  let queryCount = `SELECT COUNT(id) as jml FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell}  ${filterJenis} ${filterLevel}`
   let additional = await db.query(queryCount)
   let dataCount = additional[0].jml
   let pageCount = Math.ceil(dataCount / perpage)
   res.json({
-    data: data ?? [],
     pageCount: pageCount,
     dataCount: additional[0].jml,
+    data: data ?? [],
   })
 })
