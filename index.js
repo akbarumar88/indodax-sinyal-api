@@ -143,7 +143,7 @@ app.get("/levelchart", async (req, res, next) => {
     res.status(500)
     res.json({
       data:[], 
-      // errorMessage: e.message,
+      errorMessage: e.message,
       error: e
     })
   }
