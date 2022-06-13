@@ -8,6 +8,7 @@ var app = express()
 
 import cors from "cors"
 import { empty } from "./helper/function.js"
+import moment from "moment"
 const corsOptions = {
   origin: "*",
   credentials: true, //access-control-allow-credentials:true
@@ -41,6 +42,7 @@ app.get("/all", async (req, res, next) => {
     jenis,
     level,
   } = req.query
+  // console.log(req.query)
   let filterTgl =
     !empty(tglawal) && !empty(tglakhir)
       ? `AND tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59'`
@@ -94,4 +96,31 @@ app.get("/all", async (req, res, next) => {
     dataCount: additional[0].jml,
     data: data ?? [],
   })
+})
+
+app.get("/levelchart", async (req, res, next) => {
+  const { level = [] } = req.query
+  console.log(level)
+  let today = moment().format("YYYY-MM-DD")
+  let periode = 6
+  let data = []
+  for (let i = 0; i < periode; i++) {
+    let periodeNow = moment().subtract(i, "M")
+    let tglawal = periodeNow.startOf("M").format("YYYY-MM-DD")
+    let tglakhir = periodeNow.endOf("M").format("YYYY-MM-DD")
+    let qAwal = `SELECT count(id) as jml FROM btc WHERE tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59'`
+    let obj = {
+      periode: periodeNow.format("YYYY MMM"),
+      periodeTgl: periodeNow.format("YYYY-MM-DD")
+    }
+
+    for (let curlevel of level) {
+      let qConcat = `${qAwal} AND level = '${curlevel}'`
+      let res = await db.query(qConcat)
+      obj[curlevel] = res[0].jml
+      console.log(qConcat)
+    }
+    data = [...data, obj]
+  }
+  res.json({ data })
 })
