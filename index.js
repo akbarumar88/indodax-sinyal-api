@@ -83,44 +83,68 @@ app.get("/all", async (req, res, next) => {
   let filterLevel = !empty(level) ? `AND level = '${level}'` : ""
   // console.log({page,perpage})
   let offset = (page - 1) * perpage
-  let query = `SELECT * FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell} ${filterJenis} ${filterLevel} LIMIT ${perpage} OFFSET ${offset}`
-  // console.log(query)
-  let data = await db.query(query)
-
-  let queryCount = `SELECT COUNT(id) as jml FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell}  ${filterJenis} ${filterLevel}`
-  let additional = await db.query(queryCount)
-  let dataCount = additional[0].jml
-  let pageCount = Math.ceil(dataCount / perpage)
-  res.json({
-    pageCount: pageCount,
-    dataCount: additional[0].jml,
-    data: data ?? [],
-  })
+  try {
+    let query = `SELECT * FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell} ${filterJenis} ${filterLevel} LIMIT ${perpage} OFFSET ${offset}`
+    // console.log(query)
+    let data = await db.query(query)
+  
+    let queryCount = `SELECT COUNT(id) as jml FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell}  ${filterJenis} ${filterLevel}`
+    let additional = await db.query(queryCount)
+    let dataCount = additional[0].jml
+    let pageCount = Math.ceil(dataCount / perpage)
+    res.json({
+      pageCount: pageCount,
+      dataCount: additional[0].jml,
+      data: data ?? [],
+    })
+    
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data:[], 
+      pageCount: 0,
+      dataCount: 0,
+      // errorMessage: e.message,
+      error: e
+    })
+  }
 })
 
 app.get("/levelchart", async (req, res, next) => {
-  const { level = [] } = req.query
-  console.log(level)
+  const { level = [], jenis = "" } = req.query
+  // console.log(level)
+  let filterJenis = !empty(jenis) ? ` AND jenis = '${jenis}'` : ""
   let today = moment().format("YYYY-MM-DD")
   let periode = 6
   let data = []
-  for (let i = 0; i < periode; i++) {
-    let periodeNow = moment().subtract(i, "M")
-    let tglawal = periodeNow.startOf("M").format("YYYY-MM-DD")
-    let tglakhir = periodeNow.endOf("M").format("YYYY-MM-DD")
-    let qAwal = `SELECT count(id) as jml FROM btc WHERE tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59'`
-    let obj = {
-      periode: periodeNow.format("YYYY MMM"),
-      periodeTgl: periodeNow.format("YYYY-MM-DD")
-    }
 
-    for (let curlevel of level) {
-      let qConcat = `${qAwal} AND level = '${curlevel}'`
-      let res = await db.query(qConcat)
-      obj[curlevel] = res[0].jml
-      console.log(qConcat)
+  try {
+    for (let i = 0; i < periode; i++) {
+      let periodeNow = moment().subtract(i, "M")
+      let tglawal = periodeNow.startOf("M").format("YYYY-MM-DD")
+      let tglakhir = periodeNow.endOf("M").format("YYYY-MM-DD")
+      let qAwal = `SELECT count(id) as jml FROM btc WHERE tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59' ${filterJenis}`
+      let obj = {
+        periode: periodeNow.format("YYYY MMM"),
+        periodeTgl: periodeNow.format("YYYY-MM-DD"),
+      }
+  
+      for (let curlevel of level) {
+        let qConcat = `${qAwal} AND level = '${curlevel}'`
+          let res = await db.query(qConcat)
+        obj[curlevel] = res[0].jml
+        console.log(qConcat)
+      }
+      data = [...data, obj]
     }
-    data = [...data, obj]
+    res.json({ data })
+    
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data:[], 
+      // errorMessage: e.message,
+      error: e
+    })
   }
-  res.json({ data })
 })
