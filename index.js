@@ -87,7 +87,7 @@ app.get("/all", async (req, res, next) => {
     let query = `SELECT * FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell} ${filterJenis} ${filterLevel} LIMIT ${perpage} OFFSET ${offset}`
     // console.log(query)
     let data = await db.query(query)
-  
+
     let queryCount = `SELECT COUNT(id) as jml FROM btc WHERE TRUE ${filterTgl} ${filterHargaUSDT} ${filterHargaIDR} ${filterVolUSDT} ${filterVolIDR} ${filterLastBuy} ${filterLastSell}  ${filterJenis} ${filterLevel}`
     let additional = await db.query(queryCount)
     let dataCount = additional[0].jml
@@ -97,15 +97,14 @@ app.get("/all", async (req, res, next) => {
       dataCount: additional[0].jml,
       data: data ?? [],
     })
-    
   } catch (e) {
     res.status(500)
     res.json({
-      data:[], 
+      data: [],
       pageCount: 0,
       dataCount: 0,
       // errorMessage: e.message,
-      error: e
+      error: e,
     })
   }
 })
@@ -128,23 +127,70 @@ app.get("/levelchart", async (req, res, next) => {
         periode: periodeNow.format("YYYY MMM"),
         periodeTgl: periodeNow.format("YYYY-MM-DD"),
       }
-  
+
       for (let curlevel of level) {
         let qConcat = `${qAwal} AND level = '${curlevel}'`
-          let res = await db.query(qConcat)
+        let res = await db.query(qConcat)
         obj[curlevel] = res[0].jml
         console.log(qConcat)
       }
       data = [...data, obj]
     }
     res.json({ data })
-    
   } catch (e) {
     res.status(500)
     res.json({
-      data:[], 
+      data: [],
       errorMessage: e.message,
-      error: e
+      error: e,
+    })
+  }
+})
+
+app.get("/levelchartdate", async (req, res, next) => {
+  let defTglAwal = moment().subtract(6, "M").format("YYYY-MM-DD")
+  let defTglAkhir = moment().format("YYYY-MM-DD")
+  const {
+    level = [],
+    jenis = "",
+    tglawal = defTglAwal,
+    tglakhir = defTglAkhir,
+  } = req.query
+  console.log({level,tglawal,tglakhir})
+  let filterJenis = !empty(jenis) ? ` AND jenis = '${jenis}'` : ""
+  let from = moment(tglawal)
+  let to = moment(tglakhir)
+  let diff = to.diff(from, "M")
+  let periode = diff + 1
+  // console.log({ diff })
+  let data = []
+
+  try {
+    for (let i = 0; i < periode; i++) {
+      let periodeNow = moment().subtract(i, "M")
+      let tglawal = periodeNow.startOf("M").format("YYYY-MM-DD")
+      let tglakhir = periodeNow.endOf("M").format("YYYY-MM-DD")
+      let qAwal = `SELECT count(id) as jml FROM btc WHERE tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59' ${filterJenis}`
+      let obj = {
+        periode: periodeNow.format("YYYY MMM"),
+        periodeTgl: periodeNow.format("YYYY-MM-DD"),
+      }
+
+      for (let curlevel of level) {
+        let qConcat = `${qAwal} AND level = '${curlevel}'`
+        let res = await db.query(qConcat)
+        obj[curlevel] = res[0].jml
+        console.log(qConcat)
+      }
+      data = [...data, obj]
+    }
+    res.json({ data })
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data: [],
+      errorMessage: e.message,
+      error: e,
     })
   }
 })
