@@ -156,7 +156,7 @@ app.get("/levelchartdate", async (req, res, next) => {
     tglawal = defTglAwal,
     tglakhir = defTglAkhir,
   } = req.query
-  console.log({level,tglawal,tglakhir})
+  console.log({ level, tglawal, tglakhir })
   let filterJenis = !empty(jenis) ? ` AND jenis = '${jenis}'` : ""
   let from = moment(tglawal)
   let to = moment(tglakhir)
@@ -180,6 +180,56 @@ app.get("/levelchartdate", async (req, res, next) => {
         let qConcat = `${qAwal} AND level = '${curlevel}'`
         let res = await db.query(qConcat)
         obj[curlevel] = res[0].jml
+        console.log(qConcat)
+      }
+      data = [...data, obj]
+    }
+    res.json({ data })
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data: [],
+      errorMessage: e.message,
+      error: e,
+    })
+  }
+})
+
+app.get("/volumechartdate", async (req, res, next) => {
+  let defTglAwal = moment().subtract(6, "M").format("YYYY-MM-DD")
+  let defTglAkhir = moment().format("YYYY-MM-DD")
+  const {
+    level = [],
+    jenis = "",
+    tglawal = defTglAwal,
+    tglakhir = defTglAkhir,
+    volume = "idr",
+  } = req.query
+  console.log({ level, tglawal, tglakhir })
+  let filterJenis = !empty(jenis) ? ` AND jenis = '${jenis}'` : ""
+  let from = moment(tglawal)
+  let to = moment(tglakhir)
+  let diff = to.diff(from, "M")
+  let periode = diff + 1
+  // console.log({ diff })
+  let data = []
+
+  let col = volume == "idr" ? "volidr" : "volusdt"
+  try {
+    for (let i = 0; i < periode; i++) {
+      let periodeNow = moment().subtract(i, "M")
+      let tglawal = periodeNow.startOf("M").format("YYYY-MM-DD")
+      let tglakhir = periodeNow.endOf("M").format("YYYY-MM-DD")
+      let qAwal = `SELECT sum(${col}) as jml FROM btc WHERE tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59' ${filterJenis}`
+      let obj = {
+        periode: periodeNow.format("YYYY MMM"),
+        periodeTgl: periodeNow.format("YYYY-MM-DD"),
+      }
+
+      for (let curlevel of level) {
+        let qConcat = `${qAwal} AND level = '${curlevel}'`
+        let res = await db.query(qConcat)
+        obj[curlevel] = parseFloat(res[0].jml)
         console.log(qConcat)
       }
       data = [...data, obj]
