@@ -167,20 +167,21 @@ app.get("/levelchartdate", async (req, res, next) => {
 
   try {
     for (let i = 0; i < periode; i++) {
-      let periodeNow = moment().subtract(i, "M")
-      let tglawal = periodeNow.startOf("M").format("YYYY-MM-DD")
-      let tglakhir = periodeNow.endOf("M").format("YYYY-MM-DD")
-      let qAwal = `SELECT count(id) as jml FROM btc WHERE tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59' ${filterJenis}`
+      let periodeNow = moment(tglakhir).subtract(i, "M")
+      let tglawalPeriode = periodeNow.startOf("M").format("YYYY-MM-DD")
+      let tglakhirPeriode = periodeNow.endOf("M").format("YYYY-MM-DD")
+      let qAwal = `SELECT count(id) as jml FROM btc WHERE tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59' ${filterJenis}`
       let obj = {
         periode: periodeNow.format("YYYY MMM"),
         periodeTgl: periodeNow.format("YYYY-MM-DD"),
       }
+      // console.log(i, obj, to, periodeNow)
 
       for (let curlevel of level) {
         let qConcat = `${qAwal} AND level = '${curlevel}'`
         let res = await db.query(qConcat)
         obj[curlevel] = res[0].jml
-        console.log(qConcat)
+        // console.log(qConcat)
       }
       data = [...data, obj]
     }
@@ -217,10 +218,10 @@ app.get("/volumechartdate", async (req, res, next) => {
   let col = volume == "idr" ? "volidr" : "volusdt"
   try {
     for (let i = 0; i < periode; i++) {
-      let periodeNow = moment().subtract(i, "M")
-      let tglawal = periodeNow.startOf("M").format("YYYY-MM-DD")
-      let tglakhir = periodeNow.endOf("M").format("YYYY-MM-DD")
-      let qAwal = `SELECT sum(${col}) as jml FROM btc WHERE tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59' ${filterJenis}`
+      let periodeNow = moment(tglakhir).subtract(i, "M")
+      let tglawalPeriode = periodeNow.startOf("M").format("YYYY-MM-DD")
+      let tglakhirPeriode = periodeNow.endOf("M").format("YYYY-MM-DD")
+      let qAwal = `SELECT sum(${col}) as jml FROM btc WHERE tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59' ${filterJenis}`
       let obj = {
         periode: periodeNow.format("YYYY MMM"),
         periodeTgl: periodeNow.format("YYYY-MM-DD"),
@@ -267,10 +268,10 @@ app.get("/lastchartdate", async (req, res, next) => {
   let col = volume == "lastbuy" ? "lastbuy" : "lastsell"
   try {
     for (let i = 0; i < periode; i++) {
-      let periodeNow = moment().subtract(i, "M")
-      let tglawal = periodeNow.startOf("M").format("YYYY-MM-DD")
-      let tglakhir = periodeNow.endOf("M").format("YYYY-MM-DD")
-      let qAwal = `SELECT sum(${col}) as jml FROM btc WHERE tanggal BETWEEN '${tglawal} 00:00:00' AND '${tglakhir} 23:59:59' ${filterJenis}`
+      let periodeNow = moment(tglakhir).subtract(i, "M")
+      let tglawalPeriode = periodeNow.startOf("M").format("YYYY-MM-DD")
+      let tglakhirPeriode = periodeNow.endOf("M").format("YYYY-MM-DD")
+      let qAwal = `SELECT sum(${col}) as jml FROM btc WHERE tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59' ${filterJenis}`
       let obj = {
         periode: periodeNow.format("YYYY MMM"),
         periodeTgl: periodeNow.format("YYYY-MM-DD"),
