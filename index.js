@@ -325,3 +325,153 @@ app.get("/lastchartdate", async (req, res, next) => {
     })
   }
 })
+
+app.get("/bot-level", async (req, res, next) => {
+  let defTglAwal = moment().subtract(6, "M").format("YYYY-MM-DD")
+  let defTglAkhir = moment().format("YYYY-MM-DD")
+  const {
+    level = "",
+    jenis = "",
+    tglawal = defTglAwal,
+    tglakhir = defTglAkhir,
+    volume = "lastbuy",
+  } = req.query
+  // console.log({ level, tglawal, tglakhir })
+  let filterJenis = !empty(jenis) ? ` AND jenis = '${jenis}'` : ""
+  let from = moment(tglawal)
+  let to = moment(tglakhir)
+  let diff = to.diff(from, "M")
+  let periode = diff + 1
+  // console.log({ diff })
+  let data = []
+
+  let col = volume == "lastbuy" ? "lastbuy" : "lastsell"
+  try {
+    for (let i = 0; i < periode; i++) {
+      let periodeNow = moment(tglakhir).subtract(i, "M")
+      let tglawalPeriode = periodeNow.startOf("M").format("YYYY-MM-DD")
+      let tglakhirPeriode = periodeNow.endOf("M").format("YYYY-MM-DD")
+      let qAwal = `SELECT sum(${col}) as jml FROM btc WHERE tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59' ${filterJenis}`
+      let obj = {
+        periode: periodeNow.format("YYYY MMM"),
+        periodeTgl: periodeNow.format("YYYY-MM-DD"),
+      }
+
+      let sumHargaIdr = await db.query(
+        `SELECT sum(hargaidr) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumHargaUsdt = await db.query(
+        `SELECT sum(hargausdt) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumVolumeIdr = await db.query(
+        `SELECT sum(volidr) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumVolumeUsdt = await db.query(
+        `SELECT sum(volusdt) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumLastBuy = await db.query(
+        `SELECT sum(lastbuy) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumLastSell = await db.query(
+        `SELECT sum(lastsell) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+
+      // console.table([
+      //   `SELECT sum(hargaidr) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`,
+      //   `SELECT sum(hargausdt) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`,
+      //   `SELECT sum(volidr) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`,
+      //   `SELECT sum(volusdt) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`,
+      //   `SELECT sum(lastbuy) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`,
+      //   `SELECT sum(lastsell) as sum FROM btc WHERE lower(level)=lower('${level}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`,
+      // ])
+      let dataObj = {
+        hargaidr: sumHargaIdr[0].sum,
+        hargausdt: sumHargaUsdt[0].sum,
+        volumeidr: sumVolumeIdr[0].sum,
+        volumeusdt: sumVolumeUsdt[0].sum,
+        lastbuy: sumLastBuy[0].sum,
+        lastsell: sumLastSell[0].sum,
+      }
+      data = [...data, dataObj]
+    }
+    res.json({ data })
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data: [],
+      errorMessage: e.message,
+      error: e,
+    })
+  }
+})
+
+app.get("/bot-jenis", async (req, res, next) => {
+  let defTglAwal = moment().subtract(6, "M").format("YYYY-MM-DD")
+  let defTglAkhir = moment().format("YYYY-MM-DD")
+  const {
+    level = "",
+    jenis = "",
+    tglawal = defTglAwal,
+    tglakhir = defTglAkhir,
+    volume = "lastbuy",
+  } = req.query
+  // console.log({ level, tglawal, tglakhir })
+  let filterJenis = !empty(jenis) ? ` AND jenis = '${jenis}'` : ""
+  let from = moment(tglawal)
+  let to = moment(tglakhir)
+  let diff = to.diff(from, "M")
+  let periode = diff + 1
+  // console.log({ diff })
+  let data = []
+
+  let col = volume == "lastbuy" ? "lastbuy" : "lastsell"
+  try {
+    for (let i = 0; i < periode; i++) {
+      let periodeNow = moment(tglakhir).subtract(i, "M")
+      let tglawalPeriode = periodeNow.startOf("M").format("YYYY-MM-DD")
+      let tglakhirPeriode = periodeNow.endOf("M").format("YYYY-MM-DD")
+      let qAwal = `SELECT sum(${col}) as jml FROM btc WHERE tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59' ${filterJenis}`
+      let obj = {
+        periode: periodeNow.format("YYYY MMM"),
+        periodeTgl: periodeNow.format("YYYY-MM-DD"),
+      }
+
+      let sumHargaIdr = await db.query(
+        `SELECT sum(hargaidr) as sum FROM btc WHERE lower(jenis)=lower('${jenis}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumHargaUsdt = await db.query(
+        `SELECT sum(hargausdt) as sum FROM btc WHERE lower(jenis)=lower('${jenis}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumVolumeIdr = await db.query(
+        `SELECT sum(volidr) as sum FROM btc WHERE lower(jenis)=lower('${jenis}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumVolumeUsdt = await db.query(
+        `SELECT sum(volusdt) as sum FROM btc WHERE lower(jenis)=lower('${jenis}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumLastBuy = await db.query(
+        `SELECT sum(lastbuy) as sum FROM btc WHERE lower(jenis)=lower('${jenis}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+      let sumLastSell = await db.query(
+        `SELECT sum(lastsell) as sum FROM btc WHERE lower(jenis)=lower('${jenis}') AND tanggal BETWEEN '${tglawalPeriode} 00:00:00' AND '${tglakhirPeriode} 23:59:59'`
+      )
+
+      let dataObj = {
+        hargaidr: sumHargaIdr[0].sum,
+        hargausdt: sumHargaUsdt[0].sum,
+        volumeidr: sumVolumeIdr[0].sum,
+        volumeusdt: sumVolumeUsdt[0].sum,
+        lastbuy: sumLastBuy[0].sum,
+        lastsell: sumLastSell[0].sum,
+      }
+      data = [...data, dataObj]
+    }
+    res.json({ data })
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data: [],
+      errorMessage: e.message,
+      error: e,
+    })
+  }
+})
