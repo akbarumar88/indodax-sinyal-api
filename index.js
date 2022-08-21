@@ -1,6 +1,7 @@
 import express from "express"
 import dotenv from "dotenv"
 import db from "./config/db2.js"
+import requestIP from 'request-ip'
 
 dotenv.config()
 
@@ -126,6 +127,7 @@ app.get("/all", async (req, res, next) => {
       pageCount: pageCount,
       dataCount: additional[0].jml,
       data: data ?? [],
+      ip: requestIP.getClientIp(req)
     })
   } catch (e) {
     res.status(500)
@@ -133,7 +135,7 @@ app.get("/all", async (req, res, next) => {
       data: [],
       pageCount: 0,
       dataCount: 0,
-      // errorMessage: e.message,
+      errorMessage: e.message,
       error: e,
     })
   }
